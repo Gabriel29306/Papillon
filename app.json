@@ -130,6 +130,26 @@
         }
       ],
       [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "Course",
+              "label": "Tes cours",
+              "description": "Affiche tes cours depuis ton écran d'acceuil",
+              "minWidth": "180dp",
+              "minHeight": "60dp",
+              "targetCellWidth": 3,
+              "targetCellHeight": 1,
+              "updatePeriodMillis": 1800000,
+              "previewImage": "./assets/android_widget_previews/courseWidgetPreview.png",
+              "resizeMode": "horizontal|vertical",
+              "widgetFeatures": "reconfigurable|configuration_optional"
+            }
+          ]
+        }
+      ],
+      [
         "expo-dynamic-app-icon",
         {
           "relief": {
