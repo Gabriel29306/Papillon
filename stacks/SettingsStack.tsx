@@ -27,6 +27,7 @@ import LogsScreen from '../views/Settings/DevSettings/LogsScreen';
 import LocalStorageViewScreen from '../views/Settings/DevSettings/LocalStorageViewScreen';
 import NetworkLoggerScreen from '../views/Settings/NetworkLogger';
 import ChangelogScreen from '../views/ChangelogScreen';
+import PreviewWidgetScreen from '../views/Settings/DevSettings/PreviewWidget';
 
 function InsetSettings() {
   const UIColors = GetUIColors();
@@ -204,6 +205,13 @@ function InsetSettings() {
         component={NetworkLoggerScreen}
         options={{
           headerTitle: 'Historique réseau',
+        }}
+      />
+      <Stack.Screen
+        name="PreviewWidget"
+        component={PreviewWidgetScreen}
+        options={{
+          headerTitle: 'Widgets',
         }}
       />
     </Stack.Navigator>

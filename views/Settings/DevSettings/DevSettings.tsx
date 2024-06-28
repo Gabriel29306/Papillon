@@ -104,6 +104,25 @@ function DevSettings({ navigation }) {
               Affiche le local storage de l'application
             </NativeText>
           </NativeItem>
+          <NativeItem
+            leading={
+              <PapillonIcon
+                icon={<ScrollText size={24} color="#fff" />}
+                color="#00AAFF"
+                fill
+                small
+              />
+            }
+            chevron
+            onPress={() => navigation.navigate('PreviewWidget')}
+          >
+            <NativeText heading="h4">
+              Widgets
+            </NativeText>
+            <NativeText heading="p2">
+              Afficher les preview des widgets
+            </NativeText>
+          </NativeItem>
         </NativeList>
       </ScrollView>
     </View>
