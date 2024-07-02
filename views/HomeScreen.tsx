@@ -53,7 +53,7 @@ import { getClosestCourseColor, getSavedCourseColor } from '../utils/cours/Color
 import {
   User2,
   Locate,
-  DownloadCloud,
+  File,
   AlertCircle,
   UserCircle2,
   Globe2,
@@ -1367,7 +1367,7 @@ function DevoirsContent({
                         onPress={() => openURL(file.url)}
                       >
                         {file.url ? (
-                          <DownloadCloud size={22} color={UIColors.text} />
+                          <File size={22} color={UIColors.text} />
                         ) : (
                           <AlertCircle size={22} color={'#ff0000'} />
                         )}
