@@ -1352,7 +1352,7 @@ function DevoirsContent({
                 </Text>
               </Animated.View>
 
-              {homework.attachments.length > 0 && (
+              {homework.attachments.length > 0 && !homework.done && (
                 <View style={styles.homeworksDevoirsContentFooterContainer}>
                   <View
                     style={styles.homeworksDevoirsContentFooterFilesContainer}
