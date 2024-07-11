@@ -58,6 +58,10 @@ export const userHandler = async (instance?: Pronote, force = false): Promise<Pa
     if (instance.studentProfilePictureURL) {
       user.profile_picture = await downloadAsB64(instance.studentProfilePictureURL);
     }
+
+    if (information.iCalToken) {
+      user.iCalToken = information.iCalToken;
+    }
   
     const newCache: CachedPapillonUser = {
       timestamp: new Date().getTime(),

@@ -22,7 +22,8 @@ export interface PapillonUser {
     grades: PapillonUserPeriod[]
     attendance: PapillonUserPeriod[]
     evaluations: PapillonUserPeriod[]
-  }
+  },
+  iCalToken?: string
 }
 
 export interface PapillonUserPeriod {
