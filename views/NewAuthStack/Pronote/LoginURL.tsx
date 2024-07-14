@@ -42,7 +42,12 @@ const LoginURL = ({ navigation }: {
   // get url from clipboard if it's a pronote url
   React.useEffect(() => {
     (async () => {
-      const clipboard = await Clipboard.getUrlAsync();
+      let clipboard: string = '';
+      try {
+        const content = await Clipboard.getStringAsync();
+        const url = new URL(content); // Verifie if it's a URL
+        clipboard = url.toString();
+      } catch {}
       if (clipboard && clipboard.includes('/pronote/')) {
         setCurrentURL(clipboard);
       }
