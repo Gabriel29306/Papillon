@@ -26,7 +26,7 @@ export const timetableHandler = async (interval: [from: Date, to?: Date], instan
   if (!instance) return null;
 
   try {
-    const timetableOverview = await instance.getTimetableOverview(...interval);
+    const timetableOverview = await instance.getTimetableOverviewForInterval(...interval);
     const classes = timetableOverview.parse({
       withSuperposedCanceledClasses: false,
       withCanceledClasses: true,
