@@ -67,6 +67,7 @@
     "expo-task-manager": "~11.3.0",
     "expo-web-browser": "~12.3.2",
     "html-to-text": "^9.0.5",
+    "ics": "^3.7.6",
     "jotai": "^2.6.3",
     "js-base64": "^3.7.7",
     "jsonapi-fractal": "^2.3.1",
