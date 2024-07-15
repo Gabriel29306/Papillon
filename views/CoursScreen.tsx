@@ -29,6 +29,9 @@ import TimeSeparator from '../interface/CoursScreen/TimeSeparator';
 import * as Notifications from 'expo-notifications';
 import * as Calendar from 'expo-calendar';
 import { BlurView } from 'expo-blur';
+import { useActionSheet } from "@expo/react-native-action-sheet";
+import { downloadAsync, documentDirectory, deleteAsync } from 'expo-file-system';
+import Share from 'react-native-share';
 
 import PapillonLoading from '../components/PapillonLoading';
 import NativeText from '../components/NativeText';
@@ -41,7 +44,11 @@ import {
   X,
   TextSelect,
   BookOpenCheck,
-  RotateCcw
+  RotateCcw,
+  CalendarPlus,
+  Share as ShareIcon,
+  Link,
+  AlarmClock
 } from 'lucide-react-native';
 
 import { getClosestCourseColor, getSavedCourseColor } from '../utils/cours/ColorCoursName';
@@ -58,10 +65,12 @@ export default function CoursScreen({ navigation }: {
   const insets = useSafeAreaInsets();
   const UIColors = GetUIColors();
   const theme = useTheme();
+  const { showActionSheetWithOptions } = useActionSheet();
 
   const pagerRef = useRef<InfinitePagerImperativeApi | null>(null);
   const [calendarDate, setCalendarDate] = useState(new Date());
   const [isLoading, setIsLoading] = useState(true);
+  const [iCalURL, setICalURL] = useState<string | null>('');
 
   /**
    * Simple cache to prevent sneaking into the `AsyncStorage`.
@@ -138,7 +147,124 @@ export default function CoursScreen({ navigation }: {
     }
   }, [calendarModalOpen]);
 
+  async function showAdvandcedOption() {
+    if (!appContext.dataProvider) return;
+    if (iCalURL === '') { // If not already fetched, fetch now
+      setICalURL(await getPronoteIcalURL());
+    }
+
+    const options = ['Ajouter la journée à mon calendrier', 'Notifier des cours de ce jour là', 'Exporter l\'iCal'];
+    const icons = [
+      <CalendarPlus size={24} color={UIColors.primary}></CalendarPlus>,
+      <AlarmClock size={24} color={UIColors.primary}></AlarmClock>,
+      <ShareIcon size={24} color={UIColors.primary}></ShareIcon>
+    ];
+
+    if (iCalURL != null) {  // We can't get URL if there is no URL
+      options.push('Obtenir l\'URL de l\'iCal');
+      icons.push(<Link size={24} color={UIColors.primary}></Link>);
+    }
+
+    options.push('Annuler');
+    icons.push(<X size={24} color={"#eb4034"}></X>);
+    const cancelButtonIndex = options.length - 1;
+
+    const containerStyle = Platform.OS === 'android' ? { paddingBottom: insets.bottom, marginTop: insets.top * 4, backgroundColor: UIColors.modalBackground, borderTopLeftRadius: 25, borderTopRightRadius: 25 } : undefined;
+
+    showActionSheetWithOptions({
+      options,
+      tintColor: UIColors.primary,
+      containerStyle,
+      cancelButtonIndex,
+      icons,
+      title: "Que faire ?",
+      cancelButtonTintColor: "#eb4034",
+      showSeparators: true,
+      separatorStyle: modalStyles.separator,
+      titleTextStyle: { color: UIColors.text, ...modalStyles.title },
+      textStyle: modalStyles.text
+    },
+      async (buttonIndex) => {
+        if (typeof buttonIndex !== 'undefined' && buttonIndex !== cancelButtonIndex) {
+          if (buttonIndex == 0 || buttonIndex == 1) {
+            const dayKey = dateToFrenchFormat(calendarDate);
+            const cours = coursRef.current;
+
+            if (!(dayKey in cours)) return; // Pretty useless otherwise...
+
+            if (buttonIndex == 0) {
+              addToCalendar(cours[dayKey]);
+            } else {
+              notifyAll(cours[dayKey]);
+            }
+          }
+          if (buttonIndex == 2 || buttonIndex == 3 ) {
+            if (buttonIndex == 2) {
+              exportIcal();
+            }
+
+            if (buttonIndex == 3) {
+              exportIcalURL(); // Prevent problems with lint
+            }
+          }
+        }
+      }
+    )
+  }
+
+  async function getPronoteIcalURL(): Promise<string | null> {
+    const user = await appContext.dataProvider?.getUser();
+    const token =  user?.iCalToken ?? '';
+    if (!token) {return null}
+    return appContext.dataProvider?.pronoteInstance?.getTimetableICalURL(token) ?? null;
+  }
+
+  async function exportIcal() {
+    if (iCalURL == null) {
+      Alert.alert(
+        'Fonctionnalité en cours de développement',
+        'Pour le moment, seul les utilisateur avec l\'export sur Pronote peuvent utilisé cette fonctionalité',
+        [
+          {
+            text: 'OK',
+            style: 'cancel'
+          },
+        ]
+      );
+      return;
+    }
+
+    const filename = `export_cours_${calendarDate.getDate()}-${calendarDate.getMonth()}-${calendarDate.getFullYear()}.ics`;
+    await downloadAsync(iCalURL, documentDirectory + filename);
+    await Share.open({
+      filename: filename,
+      url: documentDirectory + filename,
+      saveToFiles: true
+    });
+    await deleteAsync(documentDirectory + filename);
+  }
+  
+  async function exportIcalURL() {
+    await Share.open({
+      message: iCalURL ?? '' // Prevent problems with lint
+    });
+  }
+  
   async function addToCalendar(cours: Record<string, PapillonLesson>): Promise<void> {
+    if (!cours.length) {
+      Alert.alert(
+        'Aucun cours n\'a été trouvé pour ce jour',
+        'Les cours n\'ont pas pu être ajoutés au calendrier.',
+        [
+          {
+            text: 'OK',
+            style: 'cancel'
+          },
+        ]
+      );    
+      return;
+    }
+
     // get calendar permission
     const { status } = await Calendar.requestCalendarPermissionsAsync();
 
@@ -228,6 +354,20 @@ Statut : ${cours.status || 'Aucun'}
   }
 
   async function notifyAll(_cours: Record<string, PapillonLesson>): Promise<void> {
+    if (!_cours.length) {
+      Alert.alert(
+        'Aucun cours n\'a été trouvé pour ce jour',
+        'Les cours n\'ont pas pu être ajoutés au calendrier.',
+        [
+          {
+            text: 'OK',
+            style: 'cancel'
+          },
+        ]
+      );    
+      return;
+    }
+
     // for each cours
     for (const coursThis of Object.values(_cours)) {
       if (!coursThis.subject) continue;
@@ -336,6 +476,42 @@ Statut : ${cours.status || 'Aucun'}
                     },
                   },
                 },
+                {
+                  actionKey: 'notifyAll',
+                  actionTitle: 'Notifier des cours',
+                  actionSubtitle:
+                    'Notifie de tous les cours de la journée',
+                  icon: {
+                    type: 'IMAGE_SYSTEM',
+                    imageValue: {
+                      systemName: 'bell',
+                    },
+                  },
+                },
+                {
+                  actionKey: 'exportIcal',
+                  actionTitle: 'Exporter l\'Ical',
+                  actionSubtitle:
+                    'Exporter le fichier Ical',
+                  icon: {
+                    type: 'IMAGE_SYSTEM',
+                    imageValue: {
+                      systemName: 'arrow.up.doc',
+                    },
+                  },
+                },
+                {
+                  actionKey: 'exportIcalURL',
+                  actionTitle: 'Exporter l\'URL de l\'Ical',
+                  actionSubtitle:
+                    'Exporter le lien du fichier Ical',
+                  icon: {
+                    type: 'IMAGE_SYSTEM',
+                    imageValue: {
+                      systemName: 'link',
+                    },
+                  },
+                },
               ],
             }}
             onPressMenuItem={({ nativeEvent }) => {
@@ -348,11 +524,20 @@ Statut : ${cours.status || 'Aucun'}
                 addToCalendar(cours[dayKey]);
               } else if (nativeEvent.actionKey === 'notifyAll') {
                 notifyAll(cours[dayKey]);
+              } else if (nativeEvent.actionKey === 'exportIcal') {
+                exportIcal();
+              } else if (nativeEvent.actionKey === 'exportIcalURL') {
+                exportIcalURL();
               }
             }}
           >
             <TouchableOpacity
               onPress={() => setCalendarModalOpen(true)}
+              onLongPress={() => {
+                if (Platform.OS === 'android') {
+                  showAdvandcedOption()
+                }
+              }}
               style={[
                 styles.calendarDateContainer,
                 { backgroundColor: '#0065A8' + '20' }
@@ -1247,3 +1432,19 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   }
 });
+
+const modalStyles = StyleSheet.create({
+  title: {
+    fontSize: 18,
+    textAlign: 'center',
+    width: '100%',
+    fontFamily: 'Papillon-Semibold'
+  },
+  text: {
+    paddingRight: 20,
+  },
+  separator: {
+    backgroundColor: '#fff2',
+    height: 0.5
+  }
+})
