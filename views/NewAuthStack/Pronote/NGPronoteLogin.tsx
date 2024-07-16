@@ -135,6 +135,7 @@ function NGPronoteLogin({
 
       const pronoteURL = instanceDetails!.pronoteRootURL;
       const deviceUUID = makeUUID();
+      setUsername(username.replace(/\s/g, "")); // Remove possible spaces, trim don't work, why ? I don't know.
 
       const pronote = await authenticatePronoteCredentials(pronoteURL, {
         username,
@@ -246,7 +247,7 @@ function NGPronoteLogin({
               placeholderTextColor={theme.dark ? '#ffffff55' : '#00000055'}
               style={[styles.nginput, { color: UIColors.text }]}
               value={username}
-              onChangeText={(text) => setUsername(text)}
+              onChangeText={(text) => setUsername(text.trim())}
             />
           </NativeItem>
           <NativeItem
