@@ -276,6 +276,7 @@ function NGPronoteLogin({
               style={[styles.nginput, { color: UIColors.text }]}
               value={password}
               secureTextEntry={!showPassword}
+              autoCapitalize='none'
               onChangeText={(text) => setPassword(text)}
             />
           </NativeItem>
