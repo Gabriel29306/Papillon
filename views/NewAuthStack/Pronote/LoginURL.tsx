@@ -130,6 +130,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     fontFamily: 'Papillon-Medium',
     fontSize: 16,
+    flex: 1
   },
 
   btn: {
