@@ -88,6 +88,7 @@ const LoginURL = ({ navigation }: {
             style={[styles.input, {color: UIColors.text}]}
             value={currentURL}
             onChangeText={text => setCurrentURL(text)}
+            autoCapitalize='none'
             ref={textInputRef}
           />
         </View>

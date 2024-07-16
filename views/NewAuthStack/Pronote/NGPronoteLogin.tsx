@@ -247,6 +247,7 @@ function NGPronoteLogin({
               placeholderTextColor={theme.dark ? '#ffffff55' : '#00000055'}
               style={[styles.nginput, { color: UIColors.text }]}
               value={username}
+              autoCapitalize='none'
               onChangeText={(text) => setUsername(text.trim())}
             />
           </NativeItem>
