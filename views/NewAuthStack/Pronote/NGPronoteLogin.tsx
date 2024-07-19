@@ -311,7 +311,7 @@ function NGPronoteLogin({
             </Text>
 
             <Text style={[styles.bottomTextText]}>
-              Pronote Espace Élèves version {instanceDetails?.version ?? 'inconnue'}
+              Pronote Espace Élèves version {instanceDetails?.version.join('.') ?? 'inconnue'}
             </Text>
           </View>
         </View>
