@@ -30,7 +30,7 @@ import * as Notifications from 'expo-notifications';
 import * as Calendar from 'expo-calendar';
 import { BlurView } from 'expo-blur';
 import { useActionSheet } from "@expo/react-native-action-sheet";
-import { downloadAsync, documentDirectory, deleteAsync } from 'expo-file-system';
+import { downloadAsync, documentDirectory, deleteAsync, writeAsStringAsync } from 'expo-file-system';
 import Share from 'react-native-share';
 
 import PapillonLoading from '../components/PapillonLoading';
@@ -57,6 +57,7 @@ import formatCoursName from '../utils/cours/FormatCoursName';
 import { dateToFrenchFormat } from '../utils/dates';
 import { useAppContext } from '../utils/AppContext';
 import GetUIColors from '../utils/GetUIColors';
+import { GenerateIcal } from '../utils/cours/GenerateIcal';
 
 export default function CoursScreen({ navigation }: {
   navigation: any // TODO
@@ -149,9 +150,11 @@ export default function CoursScreen({ navigation }: {
 
   async function showAdvandcedOption() {
     if (!appContext.dataProvider) return;
-    if (iCalURL === '') { // If not already fetched, fetch now
+    if (!iCalURL) { // If not already fetched, fetch now
       setICalURL(await getPronoteIcalURL());
     }
+    console.log(iCalURL);
+    console.log(typeof iCalURL);
 
     const options = ['Ajouter la journée à mon calendrier', 'Notifier des cours de ce jour là', 'Exporter l\'iCal'];
     const icons = [
@@ -160,7 +163,7 @@ export default function CoursScreen({ navigation }: {
       <ShareIcon size={24} color={UIColors.primary}></ShareIcon>
     ];
 
-    if (iCalURL != null) {  // We can't get URL if there is no URL
+    if (iCalURL != null && iCalURL) {  // We can't get URL if there is no URL
       options.push('Obtenir l\'URL de l\'iCal');
       icons.push(<Link size={24} color={UIColors.primary}></Link>);
     }
@@ -202,7 +205,6 @@ export default function CoursScreen({ navigation }: {
             if (buttonIndex == 2) {
               exportIcal();
             }
-
             if (buttonIndex == 3) {
               exportIcalURL(); // Prevent problems with lint
             }
@@ -220,22 +222,43 @@ export default function CoursScreen({ navigation }: {
   }
 
   async function exportIcal() {
-    if (iCalURL == null) {
-      Alert.alert(
-        'Fonctionnalité en cours de développement',
-        'Pour le moment, seul les utilisateur avec l\'export sur Pronote peuvent utilisé cette fonctionalité',
-        [
-          {
-            text: 'OK',
-            style: 'cancel'
-          },
-        ]
-      );
-      return;
+    let iCalValue: string | undefined = '';
+    if (!iCalURL) {
+      if (appContext.dataProvider?.service !== 'pronote') {
+        Alert.alert(
+          'Fonctionnalité en cours de développement',
+          'Pour le moment, seul les utilisateur avec Pronote peuvent utilisé cette fonctionalité',
+          [
+            {
+              text: 'OK',
+              style: 'cancel'
+            },
+          ]
+        );
+        return;
+      }
+      iCalValue = await GenerateIcal();
+      if (!iCalValue) {
+        Alert.alert(
+          'Une erreur est survenue, veillez réessayer plus tard.',
+          'Véifier que vous êtes connecté à internet et que vous n\'avez pas été déconnecté',
+          [
+            {
+              text: 'OK',
+              style: 'cancel'
+            },
+          ]
+        )
+        return;
+      }
     }
 
     const filename = `export_cours_${calendarDate.getDate()}-${calendarDate.getMonth()}-${calendarDate.getFullYear()}.ics`;
-    await downloadAsync(iCalURL, documentDirectory + filename);
+    if (iCalURL != null && iCalURL) {
+      await downloadAsync(iCalURL, documentDirectory + filename);
+    } else {
+      await writeAsStringAsync(documentDirectory + filename, iCalValue);
+    }
     await Share.open({
       filename: filename,
       url: documentDirectory + filename,
